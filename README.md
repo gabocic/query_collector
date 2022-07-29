@@ -1,4 +1,4 @@
-# Quer Collector
+# Query Collector
 
 CLI tool to gather the necessary data to perform a MySQL/MariaDB slow query review.
 

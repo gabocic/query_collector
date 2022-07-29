@@ -355,6 +355,14 @@ function main() {
     save_var_to_file update_rate $dbrate_update $general_info_file
     save_var_to_file qchit_ratio $dbrate_qchit $general_info_file
 
+    if [ "${major_version}" == "8.0" ]
+    then
+        retrieve_mysql_param "transaction_isolation" dbparam_tx_isolation 0
+    else
+        retrieve_mysql_param "tx_isolation" dbparam_tx_isolation 0
+    fi
+    save_var_to_file transaction_isolation $dbparam_tx_isolation $general_info_file
+
     retrieve_mysql_param "innodb_stats_on_metadata" dbparam_stats_on_md 0
     save_var_to_file innodb_stats_on_metadata $dbparam_stats_on_md $general_info_file
 
@@ -367,19 +375,19 @@ function main() {
     retrieve_mysql_param "query_cache_limit" dbparam_qcl 1
     save_var_to_file query_cache_limit $dbparam_qcl $general_info_file
 
-    retrieve_mysql_param "tmp_table_size" dbparam_tmp_table_size 1
+    retrieve_mysql_param "tmp_table_size" dbparam_tmp_table_size 0
     save_var_to_file tmp_table_size $dbparam_tmp_table_size $general_info_file
 
-    retrieve_mysql_param "max_heap_table_size" dbparam_max_heap_table_size 1
+    retrieve_mysql_param "max_heap_table_size" dbparam_max_heap_table_size 0
     save_var_to_file max_heap_table_size $dbparam_max_heap_table_size $general_info_file
 
-    retrieve_mysql_param "sort_buffer_size" dbparam_sort_buffer_size 1
+    retrieve_mysql_param "sort_buffer_size" dbparam_sort_buffer_size 0
     save_var_to_file sort_buffer_size $dbparam_sort_buffer_size $general_info_file
 
-    retrieve_mysql_param "join_buffer_size" dbparam_join_buffer_size 1
+    retrieve_mysql_param "join_buffer_size" dbparam_join_buffer_size 0
     save_var_to_file join_buffer_size $dbparam_join_buffer_size $general_info_file
 
-    retrieve_mysql_param "max_sort_length" dbparam_max_sort_length 1
+    retrieve_mysql_param "max_sort_length" dbparam_max_sort_length 0
     save_var_to_file max_sort_length $dbparam_max_sort_length $general_info_file
 
 
