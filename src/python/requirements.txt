@@ -1,0 +1,4 @@
+mysqlclient==2.1.1
+requests==2.27.1
+sqlglot==9.0.5
+sqlparse==0.4.3
