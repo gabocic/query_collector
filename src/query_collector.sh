@@ -54,6 +54,7 @@ function request_db_params() {
         read -p "Please provide the Database port [$default_db_port]: " db_port
         db_port=${db_port:-$default_db_port}
     fi
+    read -p "Please specify the database name, in case we need it: " defaultdb
 }
 
 
@@ -300,7 +301,7 @@ function main() {
     save_var_to_file version $dbparam_version $general_info_file
 
     retrieve_mysql_param "innodb_version" dbparam_idb_version 0
-    save_var_to_file version $dbparam_idb_version $general_info_file
+    save_var_to_file idb_version $dbparam_idb_version $general_info_file
     major_version=`echo $dbparam_idb_version | awk -F "." '{print $1"."$2}'`
 
     # Are we working with MariaDB?
@@ -432,6 +433,7 @@ function main() {
     
     retrieve_mysql_param "long_query_time" dbparam_longquerytime 0
     log info "Long query time set to $dbparam_longquerytime seconds"
+    save_var_to_file long_query_time $dbparam_longquerytime $general_info_file
 
     retrieve_mysql_param "log_slow_admin_statements" dbparam_logslowadminstatements 1
     if [ "$dbparam_logslowadminstatements" == 0 ]
@@ -440,6 +442,7 @@ function main() {
     else
         log info "Admin statements like ALTER TABLE or CREATE INDEX *ARE* being logged"
     fi
+    save_var_to_file log_slow_admin_statements $dbparam_logslowadminstatements $general_info_file
 
     retrieve_mysql_param "log_slow_slave_statements" dbparam_logslowslavestatements 1
     if [ "$dbparam_logslowslavestatements" == 0 ]
@@ -448,7 +451,8 @@ function main() {
     else
         log info "Slow queries executed by slave threads *ARE* being logged"
     fi
-    
+    save_var_to_file log_slow_slave_statements $dbparam_logslowslavestatements $general_info_file
+
     retrieve_mysql_param "min_examined_row_limit" dbparam_minexaminedrowlimit 0
     log info "Minimum rows read to be included in the slow query log: $dbparam_minexaminedrowlimit"
     
@@ -489,6 +493,7 @@ function main() {
         --schema-sql-file=$sql_commands_file \
         --mdb-costs-file=$mdb_costs_query_script \
         --no-version-check \
+        --default-db=$defaultdb \
         --server-version=$major_version \
         --no-continue-on-error $dbparam_slowquerylogfile > $query_digest_file 2>>$log_file
 

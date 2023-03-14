@@ -6756,6 +6756,7 @@ sub BUILDARGS {
          report_all       => $o->get('report-all'),
          report_histogram => $o->get('report-histogram'),
          explain_dir      => $o->get('explain-dir'),
+         default_db      => $o->get('default-db'),
          schema_sql_file    => $o->get('schema-sql-file'),
          mdb_costs_file    => $o->get('mdb-costs-file'),
          explain_file     => $o->get('explain-file'),
@@ -7083,17 +7084,6 @@ sub query_report {
                $report .= "$samp_query${mark}\n";
             }
             else {
-#               my $checksum = make_checksum($vals->{item});
-#               print FH "-- BEGIN QUERY\n";
-#               print FH "tee $explaindir/" . "$checksum" .".txt\n";
-#               print FH "USE $vals->{default_db}\n";
-#               print FH "EXPLAIN FORMAT=json\n$samp_query${mark}\n";
-#               print FH "SHOW WARNINGS\\G\n";
-#               print FH "SELECT TRACE,MISSING_BYTES_BEYOND_MAX_MEM_SIZE,INSUFFICIENT_PRIVILEGES FROM INFORMATION_SCHEMA.OPTIMIZER_TRACE\\G\n";
-#               print FH "notee\n";
-#               print FH "-- END QUERY\n";
-#               print FH "\n";
- 
                $report .= "# EXPLAIN $partitions_msg\n$samp_query${mark}\n"; 
                $report .= $self->explain_report($samp_query, $vals->{default_db});
             }
@@ -7993,6 +7983,7 @@ override query_report => sub {
    my ($qps, $conc) = (0, 0);
 
    my $explaindir = $self->{options}->{explain_dir};
+   my $defaultdb = $self->{options}->{default_db};
    my $schemasqlscript = $explaindir . "/" . $self->{options}->{schema_sql_file};
    my $explainscript = $explaindir . "/" . $self->{options}->{explain_file};
    my $mdbcostsscript = $explaindir . "/" . $self->{options}->{mdb_costs_file};
@@ -8111,18 +8102,26 @@ override query_report => sub {
                       :                             undef;
       my $fingerprint = substr($item, 0, $self->max_fingerprint_length);
       my $checksum    = make_checksum($item);
+      my $dbcontext;
 
-      if ( $sample->{db} ) {
-         print FHEXP "-- BEGIN QUERY\n";
-         print FHEXP "tee $explaindir/" . "$checksum" .".txt\n";
-         print FHEXP "USE $sample->{db}\n";
-         print FHEXP "EXPLAIN FORMAT=json\n$sample->{arg}\\G\n";
-         print FHEXP "SHOW WARNINGS\\G\n";
-         print FHEXP "SELECT TRACE,MISSING_BYTES_BEYOND_MAX_MEM_SIZE,INSUFFICIENT_PRIVILEGES FROM INFORMATION_SCHEMA.OPTIMIZER_TRACE\\G\n";
-         print FHEXP "notee\n";
-         print FHEXP "-- END QUERY\n";
-         print FHEXP "\n";
+      # There are cases where USE <DB> was not run for the session and
+      # slow query log doesn't have a database context. We need to handle
+      # those scenarios
+      if ( !(defined $sample->{db} && $sample->{db} ne '') ) {
+        $dbcontext = $defaultdb;
       }
+      else {
+        $dbcontext = $sample->{db};
+      }
+      print FHEXP "-- BEGIN QUERY\n";
+      print FHEXP "tee $explaindir/" . "$checksum" .".txt\n";
+      print FHEXP "USE $dbcontext\n";
+      print FHEXP "EXPLAIN FORMAT=json\n$sample->{arg}\\G\n";
+      print FHEXP "SHOW WARNINGS\\G\n";
+      print FHEXP "SELECT TRACE,MISSING_BYTES_BEYOND_MAX_MEM_SIZE,INSUFFICIENT_PRIVILEGES FROM INFORMATION_SCHEMA.OPTIMIZER_TRACE\\G\n";
+      print FHEXP "notee\n";
+      print FHEXP "-- END QUERY\n";
+      print FHEXP "\n";
 
       my $class       = {
          checksum    => $checksum,
@@ -15696,6 +15695,12 @@ Directory where EXPLAIN statements output will be saved to.
 type: string
 
 First version digit for the database server
+
+=item --default-db
+
+type: string
+
+Database name to use in case it was not capture on the slow query log
 
 =item --expected-range
 
